@@ -5,10 +5,16 @@
         <variable
             name="dog"
             type="com.wili.dogsapp.model.DogBreed" />
+
+        <variable
+            name="palette"
+            type="com.wili.dogsapp.model.DogPalette" />
+
     </data>
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:background="@{palette.color}"
         tools:context="com.wili.dogsapp.view.ListFragment">
         <ImageView
             android:id="@+id/dogImage"
