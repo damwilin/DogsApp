@@ -1,12 +1,14 @@
 package com.wili.dogsapp.viewmodel
 
 import android.app.Application
+import android.app.NotificationManager
 import android.widget.Toast
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.wili.dogsapp.model.DogBreed
 import com.wili.dogsapp.model.DogDatabase
 import com.wili.dogsapp.model.DogsApiService
+import com.wili.dogsapp.util.NotificationHelper
 import com.wili.dogsapp.util.SharedPreferencesHelper
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
@@ -43,7 +45,7 @@ class ListViewModel(application: Application) : BaseViewModel(application) {
         launch {
             val dogs = DogDatabase(getApplication()).getDao().getAllDogs()
             dogsRetrieved(dogs)
-            Toast.makeText(getApplication(),"Dogs retrieved from dabasase", Toast.LENGTH_SHORT).show()
+            Toast.makeText(getApplication(),"Dogs retrieved from database", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -55,8 +57,9 @@ class ListViewModel(application: Application) : BaseViewModel(application) {
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribeWith(object : DisposableSingleObserver<List<DogBreed>>() {
                     override fun onSuccess(dogList: List<DogBreed>) {
-                        Toast.makeText(getApplication(),"Dogs retrieved from endpoint", Toast.LENGTH_SHORT).show()
                         storeDogsLocally(dogList)
+                        Toast.makeText(getApplication(),"Dogs retrieved from endpoint", Toast.LENGTH_SHORT).show()
+                        NotificationHelper(getApplication()).createNotification()
                     }
 
                     override fun onError(e: Throwable) {
