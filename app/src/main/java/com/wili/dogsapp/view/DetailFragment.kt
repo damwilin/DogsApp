@@ -10,6 +10,8 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import androidx.navigation.Navigation
 import com.wili.dogsapp.R
+import com.wili.dogsapp.util.getProgressDrawable
+import com.wili.dogsapp.util.loadImage
 import com.wili.dogsapp.viewmodel.DetailViewModel
 import kotlinx.android.synthetic.main.fragment_detail.*
 
@@ -31,9 +33,9 @@ class DetailFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         viewModel = ViewModelProviders.of(this).get(DetailViewModel::class.java)
-        viewModel.fetch()
         arguments?.let {
             dogUuid = DetailFragmentArgs.fromBundle(it).dogUuid
+            viewModel.fetch(dogUuid)
         }
         observeViewModel()
     }
@@ -44,6 +46,9 @@ class DetailFragment : Fragment() {
             dogPurpose.text = dog.bredFor
             dogTemperament.text = dog.temperament
             dogLifespan.text = dog.lifeSpan
+            context?.let {
+                dogImage.loadImage(dog.imageUrl, getProgressDrawable(it))
+            }
         })
     }
 }
