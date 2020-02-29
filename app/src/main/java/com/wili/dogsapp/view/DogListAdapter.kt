@@ -7,6 +7,8 @@ import androidx.navigation.Navigation
 import androidx.recyclerview.widget.RecyclerView
 import com.wili.dogsapp.R
 import com.wili.dogsapp.model.DogBreed
+import com.wili.dogsapp.util.getProgressDrawable
+import com.wili.dogsapp.util.loadImage
 import kotlinx.android.synthetic.main.item_dog.view.*
 import java.util.zip.Inflater
 
@@ -30,6 +32,7 @@ class DogListAdapter(val dogsList: ArrayList<DogBreed>): RecyclerView.Adapter<Do
         holder.view.setOnClickListener {
             Navigation.findNavController(it).navigate(ListFragmentDirections.actionDetailFragment())
         }
+        holder.view.imageView.loadImage(dogsList[position].imageUrl, getProgressDrawable(holder.view.imageView.context))
     }
 
     class DogViewHolder(var view: View): RecyclerView.ViewHolder(view)
