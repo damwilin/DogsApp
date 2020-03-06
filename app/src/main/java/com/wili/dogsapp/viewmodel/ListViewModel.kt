@@ -5,6 +5,10 @@ import android.app.NotificationManager
 import android.widget.Toast
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import com.wili.dogsapp.di.AppModule
+import com.wili.dogsapp.di.CONTEXT_APP
+import com.wili.dogsapp.di.DaggerViewModelComponent
+import com.wili.dogsapp.di.TypeOfContext
 import com.wili.dogsapp.model.DogBreed
 import com.wili.dogsapp.model.DogDatabase
 import com.wili.dogsapp.model.DogsApiService
@@ -17,16 +21,28 @@ import io.reactivex.schedulers.Schedulers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.lang.NumberFormatException
+import javax.inject.Inject
 
 class ListViewModel(application: Application) : BaseViewModel(application) {
 
-    private val prefHelper = SharedPreferencesHelper(application)
+    @Inject
+    @field:TypeOfContext(type = CONTEXT_APP)
+    lateinit var prefHelper: SharedPreferencesHelper
     private var refreshTime = 5 * 60 * 1000 * 1000 * 1000L //5 minutes in nanoseconds
-    private val dogsService = DogsApiService()
+    @Inject
+    lateinit var dogsService:DogsApiService
+
     private val disposable = CompositeDisposable()
     val dogs = MutableLiveData<List<DogBreed>>()
     val dogsLoadError = MutableLiveData<Boolean>()
     val loading = MutableLiveData<Boolean>()
+
+    init {
+        DaggerViewModelComponent.builder()
+            .appModule(AppModule(getApplication()))
+            .build()
+            .inject(this)
+    }
 
     fun refresh() {
         checkCacheDuration()
