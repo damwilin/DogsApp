@@ -10,6 +10,7 @@ import com.wili.dogsapp.di.CONTEXT_APP
 import com.wili.dogsapp.di.DaggerViewModelComponent
 import com.wili.dogsapp.di.TypeOfContext
 import com.wili.dogsapp.model.DogBreed
+import com.wili.dogsapp.model.DogDao
 import com.wili.dogsapp.model.DogDatabase
 import com.wili.dogsapp.model.DogsApiService
 import com.wili.dogsapp.util.NotificationHelper
@@ -25,26 +26,36 @@ import javax.inject.Inject
 
 class ListViewModel(application: Application) : BaseViewModel(application) {
 
+    constructor(application: Application, test:Boolean = true):this(application){
+        injected = test
+    }
+
     @Inject
     @field:TypeOfContext(type = CONTEXT_APP)
     lateinit var prefHelper: SharedPreferencesHelper
     private var refreshTime = 5 * 60 * 1000 * 1000 * 1000L //5 minutes in nanoseconds
     @Inject
     lateinit var dogsService:DogsApiService
+    @Inject
+    lateinit var dogDao: DogDao
 
     private val disposable = CompositeDisposable()
     val dogs = MutableLiveData<List<DogBreed>>()
     val dogsLoadError = MutableLiveData<Boolean>()
     val loading = MutableLiveData<Boolean>()
+    private var injected = false
 
-    init {
-        DaggerViewModelComponent.builder()
-            .appModule(AppModule(getApplication()))
-            .build()
-            .inject(this)
+    fun inject() {
+        if (!injected){
+            DaggerViewModelComponent.builder()
+                .appModule(AppModule(getApplication()))
+                .build()
+                .inject(this)
+        }
     }
 
     fun refresh() {
+        inject()
         checkCacheDuration()
         val updateTime = prefHelper.getUpdateTime()
         if (updateTime != null && updateTime != 0L && System.nanoTime() - updateTime < refreshTime){
@@ -65,19 +76,21 @@ class ListViewModel(application: Application) : BaseViewModel(application) {
     }
 
     fun refreshBypassCache(){
+        inject()
         fetchFromRemote()
     }
 
-    private fun fetchFromDatabase() {
+    fun fetchFromDatabase() {
+        inject()
         loading.value = true
         launch {
-            val dogs = DogDatabase(getApplication()).getDao().getAllDogs()
+            val dogs = dogDao.getAllDogs()
             dogsRetrieved(dogs)
-            Toast.makeText(getApplication(),"Dogs retrieved from database", Toast.LENGTH_SHORT).show()
         }
     }
 
-    private fun fetchFromRemote() {
+    fun fetchFromRemote() {
+        inject()
         loading.value = true
         disposable.add(
             dogsService.getDogs()
@@ -86,8 +99,6 @@ class ListViewModel(application: Application) : BaseViewModel(application) {
                 .subscribeWith(object : DisposableSingleObserver<List<DogBreed>>() {
                     override fun onSuccess(dogList: List<DogBreed>) {
                         storeDogsLocally(dogList)
-                        Toast.makeText(getApplication(),"Dogs retrieved from endpoint", Toast.LENGTH_SHORT).show()
-                        NotificationHelper(getApplication()).createNotification()
                     }
 
                     override fun onError(e: Throwable) {
@@ -107,14 +118,13 @@ class ListViewModel(application: Application) : BaseViewModel(application) {
 
     private fun storeDogsLocally(list: List<DogBreed>) {
         launch {
-            val dao = DogDatabase(getApplication()).getDao()
-            dao.deleteAllDogs()
-            val result = dao.insertAll(*list.toTypedArray())
-            var i = 0
-            while (i < list.size) {
-                list[i].uuid = result[i].toInt()
-                ++i
-            }
+            dogDao.deleteAllDogs()
+            val result = dogDao.insertAll(*list.toTypedArray())
+                var i = 0
+                while (i < list.size) {
+                    list[i].uuid = result[i].toInt()
+                    ++i
+                }
             dogsRetrieved(list)
         }
         prefHelper.saveUpdateTime(System.nanoTime())
